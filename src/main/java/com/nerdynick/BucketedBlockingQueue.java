@@ -27,8 +27,8 @@ import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
 
 /**
- * A {@see BlockingQueue} Implementation that queues items into buckets based on
- * a supplied {@see Function} return value.
+ * A {@link BlockingQueue} Implementation that queues items into buckets based on
+ * a supplied {@link Function} return value.
  * 
  * @author Nikoleta Verbeck
  *
@@ -77,8 +77,8 @@ public class BucketedBlockingQueue<K, E> implements BlockingQueue<E> {
 	}
 
 	/**
-	 * Default {@see Supplier} for suplying a Bounded {@see BlockingQueue} during
-	 * {@see Bucket} creation.
+	 * Default {@link Supplier} for suplying a Bounded {@link BlockingQueue} during
+	 * {@link Bucket} creation.
 	 * 
 	 * @param <E>   Element types stored in the BlockingQueue
 	 * @param limit Bounding limit for the BlockingQueue
@@ -91,8 +91,8 @@ public class BucketedBlockingQueue<K, E> implements BlockingQueue<E> {
 	}
 
 	/**
-	 * Default {@see Supplier} for suplying a Unbounded {@see BlockingQueue} during
-	 * {@see Bucket} creation.
+	 * Default {@link Supplier} for suplying a Unbounded {@link BlockingQueue} during
+	 * {@link Bucket} creation.
 	 * 
 	 * @param <E> Element types stored in the BlockingQueue
 	 * @return Supplier
@@ -105,15 +105,15 @@ public class BucketedBlockingQueue<K, E> implements BlockingQueue<E> {
 
 	/**
 	 * 
-	 * @param keySupplier   {@see Function} to provide the bucketing key given the
+	 * @param keySupplier   {@link Function} to provide the bucketing key given the
 	 *                      element being inserted
-	 * @param queueSupplier {@see Supplier} to provde a new, dedicated,
-	 *                      {@see BlockingQueue} for each new {@see Bucket}
-	 * @param bucketSensor  {@see BiFunction} to provide a {@see BucketSensor} for
-	 *                      each new {@see Bucket}
+	 * @param queueSupplier {@link Supplier} to provde a new, dedicated,
+	 *                      {@link BlockingQueue} for each new {@link Bucket}
+	 * @param bucketSensor  {@link BiFunction} to provide a {@link BucketSensor} for
+	 *                      each new {@link Bucket}
 	 * @param expireTime    Time to expire and remove a bucket after it's last
 	 *                      add/put/offer
-	 * @param expireUnit    {@see TimeUnit} for expire time
+	 * @param expireUnit    {@link TimeUnit} for expire time
 	 */
 	public BucketedBlockingQueue(Function<E, K> keySupplier, Supplier<BlockingQueue<E>> queueSupplier,
 			BiFunction<K, Bucket<K, E>, BucketSensor> bucketSensor, long expireTime, TimeUnit expireUnit) {

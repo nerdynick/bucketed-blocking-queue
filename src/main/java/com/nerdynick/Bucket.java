@@ -9,8 +9,8 @@ import java.util.function.Supplier;
 import com.google.common.util.concurrent.ForwardingBlockingQueue;
 
 /**
- * Wrapper classes around a given {@see BlockingQueue}. The BlockingQueue is
- * supplied from the given {@see Supplier}.
+ * Wrapper classes around a given {@link BlockingQueue}. The BlockingQueue is
+ * supplied from the given {@link Supplier}.
  * 
  * @author Nikoleta Verbeck
  */
