@@ -19,9 +19,9 @@ public class Bucket<K, E> extends ForwardingBlockingQueue<E> {
 	private final BucketSensor _sensor;
 	public final K key;
 
-	public Bucket(final Supplier<BlockingQueue<E>> queueSupplier, final BiFunction<K, Bucket<K, E>, BucketSensor> bucketSensor, final K key) {
+	public Bucket(final BlockingQueue<E> queue, final BiFunction<K, Bucket<K, E>, BucketSensor> bucketSensor, final K key) {
 		this.key = key;
-		this._queue = queueSupplier.get();
+		this._queue = queue;
 		this._sensor = bucketSensor.apply(key, this);
 	}
 
@@ -88,8 +88,12 @@ public class Bucket<K, E> extends ForwardingBlockingQueue<E> {
 		throw new RuntimeException("Not Implemented");
 	}
 
-	public boolean isReady() {
-		return this._sensor.isReady();
+	public boolean canTake() {
+		return this._sensor.canTake();
+	}
+	
+	public boolean canOffer() {
+		return this._sensor.canOffer();
 	}
 
 }

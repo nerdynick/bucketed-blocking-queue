@@ -77,7 +77,7 @@ public class BucketedBlockingQueue<K, E> implements BlockingQueue<E> {
 	}
 
 	/**
-	 * Default {@link Supplier} for suplying a Bounded {@link BlockingQueue} during
+	 * Default {@link Supplier} for supplying a Bounded {@link BlockingQueue} during
 	 * {@link Bucket} creation.
 	 * 
 	 * @param <E>   Element types stored in the BlockingQueue
@@ -102,6 +102,20 @@ public class BucketedBlockingQueue<K, E> implements BlockingQueue<E> {
 			return new LinkedBlockingDeque<>();
 		};
 	}
+	
+	public BucketedBlockingQueue(
+			final Function<E, K> keySupplier,
+			final BiFunction<K, Bucket<K, E>, BucketSensor> bucketSensor, 
+			final long expireTime, final TimeUnit expireUnit) {
+		this(keySupplier, DefaultQueue(), bucketSensor, expireTime, expireUnit);
+	}
+	public BucketedBlockingQueue(
+			final Function<E, K> keySupplier, 
+			final int queueLimit,
+			final BiFunction<K, Bucket<K, E>, BucketSensor> bucketSensor, 
+			final long expireTime, final TimeUnit expireUnit) {
+		this(keySupplier, DefaultQueue(queueLimit), bucketSensor, expireTime, expireUnit);
+	}
 
 	/**
 	 * 
@@ -115,21 +129,31 @@ public class BucketedBlockingQueue<K, E> implements BlockingQueue<E> {
 	 *                      add/put/offer
 	 * @param expireUnit    {@link TimeUnit} for expire time
 	 */
-	public BucketedBlockingQueue(Function<E, K> keySupplier, Supplier<BlockingQueue<E>> queueSupplier,
-			BiFunction<K, Bucket<K, E>, BucketSensor> bucketSensor, long expireTime, TimeUnit expireUnit) {
+	public BucketedBlockingQueue(
+			final Function<E, K> keySupplier, 
+			final Supplier<BlockingQueue<E>> queueSupplier,
+			final BiFunction<K, Bucket<K, E>, BucketSensor> bucketSensor, 
+			final long expireTime, final TimeUnit expireUnit) {
 		this.keySupplier = keySupplier;
 		this.queueSupplier = queueSupplier;
 		this.bucketSensor = bucketSensor;
 
-		this.bucketsByKey = CacheBuilder.newBuilder().initialCapacity(10).expireAfterAccess(expireTime, expireUnit)
+		this.bucketsByKey = CacheBuilder.newBuilder()
+				.initialCapacity(10)
+				.expireAfterAccess(expireTime, expireUnit)
 				.removalListener(new RemovalListener<K, Bucket<K, E>>() {
+					@Override
 					public void onRemoval(RemovalNotification<K, Bucket<K,E>> notification) {
 						BucketedBlockingQueue.this.allBuckets.remove(notification.getValue());
 					}
 				}).build(new CacheLoader<K, Bucket<K, E>>() {
 					@Override
 					public Bucket<K,E> load(K key) throws Exception {
-						Bucket<K, E> b = new Bucket<K, E>(BucketedBlockingQueue.this.queueSupplier, BucketedBlockingQueue.this.bucketSensor, key);
+						final Bucket<K, E> b = new Bucket<K, E>(
+							BucketedBlockingQueue.this.queueSupplier.get(),
+							BucketedBlockingQueue.this.bucketSensor, 
+							key
+						);
 						BucketedBlockingQueue.this.allBuckets.add(b);
 						return b;
 					}
@@ -146,11 +170,11 @@ public class BucketedBlockingQueue<K, E> implements BlockingQueue<E> {
 
 	public boolean isEmpty() {
 		for (Bucket<K, E> b : this.allBuckets) {
-			if (b.isEmpty()) {
-				return true;
+			if (!b.isEmpty()) {
+				return false;
 			}
 		}
-		return false;
+		return true;
 	}
 
 	public boolean contains(Object o) {
@@ -177,7 +201,13 @@ public class BucketedBlockingQueue<K, E> implements BlockingQueue<E> {
 	}
 
 	public <T> T[] toArray(T[] a) {
-		throw new RuntimeException("Not Implemented");
+		final ArrayList<E> els = new ArrayList<E>();
+
+		Iterator<E> iter = this.iterator();
+		while (iter.hasNext()) {
+			els.add(iter.next());
+		}
+		return els.toArray(a);
 	}
 
 	public boolean remove(Object o) {
@@ -203,8 +233,8 @@ public class BucketedBlockingQueue<K, E> implements BlockingQueue<E> {
 
 	public boolean removeAll(Collection<?> c) {
 		boolean removed = false;
-		for (Object e : c) {
-			if (this.remove(e)) {
+		for(Bucket<K,E> b: this.allBuckets) {
+			if(b.removeAll(c)) {
 				removed = true;
 			}
 		}
@@ -212,7 +242,13 @@ public class BucketedBlockingQueue<K, E> implements BlockingQueue<E> {
 	}
 
 	public boolean retainAll(Collection<?> c) {
-		throw new RuntimeException("Not Implemented");
+		boolean removed = false;
+		for(Bucket<K,E> b: this.allBuckets) {
+			if(b.retainAll(c)) {
+				removed = true;
+			}
+		}
+		return removed;
 	}
 
 	public void clear() {
@@ -221,12 +257,23 @@ public class BucketedBlockingQueue<K, E> implements BlockingQueue<E> {
 		}
 	}
 
-	private int getNextInc() {
+	/**
+	 * Ticks the counter and return the bucket to work on next.
+	 * 
+	 * @return
+	 */
+	private int tick() {
 		int t = Math.abs(tick.incrementAndGet());
 		return (t % this.allBuckets.size());
 	}
 
-	private Bucket<K, E> getNextBucket() {
+	/**
+	 * Get the next bucket, if on is available. 
+	 * Otherwise return null when no bucket can be found.
+	 * 
+	 * @return Next available bucket or null
+	 */
+	protected Bucket<K, E> getNextBucket() {
 		try {
 			return this.getNextBucket(-1);
 		} catch (InterruptedException e) {
@@ -234,6 +281,17 @@ public class BucketedBlockingQueue<K, E> implements BlockingQueue<E> {
 		}
 	}
 
+	/**
+	 * Get the next bucket. 
+	 * Waiting up to `wait` to find an available one.
+	 * 
+	 * @param wait How long to wait for a bucket to be available. 
+	 * 0 will wait tell available or interrupted. 
+	 * -1 will return right away.
+	 * Anything else is will be the wait time in MS.
+	 * @return Next available bucket or null
+	 * @throws InterruptedException
+	 */
 	private Bucket<K, E> getNextBucket(long wait) throws InterruptedException {
 		if (this.allBuckets.isEmpty()) {
 			return null;
@@ -241,27 +299,28 @@ public class BucketedBlockingQueue<K, E> implements BlockingQueue<E> {
 
 		int iterations = 0;
 		Bucket<K, E> b = null;
-		while (b == null) {
-			iterations++;
-			int t = this.getNextInc();
+		do {
+			final int t = this.tick();
 			b = this.allBuckets.get(t);
 
-			if (b == null || !b.isReady() || !b.isEmpty()) {
+			if (b == null || !b.canTake() || !b.isEmpty()) {
 				b = null;
-			}
-
-			if (iterations > this.allBuckets.size()) {
-				if (wait == 0) {
-					this.allBuckets.wait();
-				} else if (wait < 0) {
-					LOG.trace("Exhausted all buckets. None are ready or have elements.");
-					break;
-				} else {
-					this.allBuckets.wait(wait);
+				iterations++;
+	
+				if (iterations >= this.allBuckets.size()) {
+					iterations = 0;
+					if (wait == 0) {
+						this.allBuckets.wait();
+					} else if (wait < 0) {
+						LOG.trace("Exhausted all buckets. None are available or have elements.");
+						break;
+					} else {
+						this.allBuckets.wait(wait);
+					}
 				}
-				iterations = 0;
 			}
-		}
+		} while (b == null);
+		
 		return b;
 	}
 

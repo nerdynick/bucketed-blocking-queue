@@ -15,8 +15,17 @@ public class BucketSensors {
 			gauge.incr();
 		}
 
-		public boolean isReady() {
+		@Override
+		public void onTake() {}
+
+		@Override
+		public boolean canTake() {
 			return gauge.currentRate() >= rate ? false : true;
+		}
+
+		@Override
+		public boolean canOffer() {
+			return true;
 		}
 	}
 	
