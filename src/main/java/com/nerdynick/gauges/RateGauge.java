@@ -1,7 +1,6 @@
 package com.nerdynick.gauges;
 
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 
 public class RateGauge {
@@ -33,6 +32,10 @@ public class RateGauge {
 	public void incr() {
 		tickIfNeeded();
 		adder.increment();
+	}
+	public void add(long count) {
+		tickIfNeeded();
+		adder.add(count);
 	}
 	
 	public long currentRate() {

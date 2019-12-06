@@ -450,7 +450,7 @@ public class BucketedBlockingQueue<K, E> implements BlockingQueue<E> {
 	}
 
 	public int remainingCapacity() {
-		throw new RuntimeException("Not implemented");
+		return Integer.MAX_VALUE;
 	}
 
 	public int drainTo(Collection<? super E> c) {

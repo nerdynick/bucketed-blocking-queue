@@ -32,24 +32,45 @@ public class Bucket<K, E> extends ForwardingBlockingQueue<E> {
 
 	@Override
 	public boolean offer(E o) {
+		if(!this._sensor.canOffer()) {
+			return false;
+		}
 		this._sensor.onOffer();
 		return super.offer(o);
 	}
 
 	@Override
 	public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
+		if(!this._sensor.canOfferWait(timeout, unit)) {
+			return false;
+		}
 		this._sensor.onOffer();
 		return super.offer(e, timeout, unit);
+	}
+	
+	@Override
+	public boolean addAll(Collection<? extends E> c) {
+		if(!this._sensor.canOffer()) {
+			return false;
+		}
+		this._sensor.onOffer(c.size());
+		return super.addAll(c);
 	}
 
 	@Override
 	public boolean add(E o) {
+		if(!this._sensor.canOffer()) {
+			throw new IllegalStateException("Bucket Sensor has blocked the add");
+		}
 		this._sensor.onOffer();
 		return super.add(o);
 	}
 
 	@Override
 	public void put(E e) throws InterruptedException {
+		if(!this._sensor.canOfferWait()) {
+			return;
+		}
 		this._sensor.onOffer();
 		super.put(e);
 	}
