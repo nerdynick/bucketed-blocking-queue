@@ -1,4 +1,4 @@
-package com.nerdynick;
+package com.nerdynick.queue.blocking.bucket.sensor;
 
 import java.util.concurrent.TimeUnit;
 

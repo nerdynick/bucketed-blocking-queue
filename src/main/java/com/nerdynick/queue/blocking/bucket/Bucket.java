@@ -1,4 +1,4 @@
-package com.nerdynick;
+package com.nerdynick.queue.blocking.bucket;
 
 import java.util.Collection;
 import java.util.concurrent.BlockingQueue;
@@ -7,6 +7,7 @@ import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
 import com.google.common.util.concurrent.ForwardingBlockingQueue;
+import com.nerdynick.queue.blocking.bucket.sensor.BucketSensor;
 
 /**
  * Wrapper classes around a given {@link BlockingQueue}. The BlockingQueue is

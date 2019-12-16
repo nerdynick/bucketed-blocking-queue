@@ -1,4 +1,4 @@
-package com.nerdynick;
+package com.nerdynick.queue.blocking.bucket;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -25,6 +25,7 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
+import com.nerdynick.queue.blocking.bucket.sensor.BucketSensor;
 
 /**
  * A {@link BlockingQueue} Implementation that queues items into buckets based on
@@ -208,6 +209,10 @@ public class BucketedBlockingQueue<K, E> implements BlockingQueue<E> {
 			els.add(iter.next());
 		}
 		return els.toArray(a);
+	}
+	
+	public void removeBucket(K key) {
+		this.bucketsByKey.invalidate(key);
 	}
 
 	public boolean remove(Object o) {
